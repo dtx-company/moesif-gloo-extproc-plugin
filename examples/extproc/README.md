@@ -107,7 +107,7 @@ spec:
 EOF
 ```
 
-## Deploy HTTPBin (Demo Application)
+## Deploy httpbin (Demo Application)
 
 As part of the [Gloo Gateway Quick Start Guide](https://docs.solo.io/gateway/latest/quickstart/#deploy-a-sample-app):
 
@@ -116,9 +116,9 @@ kubectl create ns httpbin
 kubectl -n httpbin apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh-use-cases/main/policy-demo/httpbin.yaml
 ```
 
-## Expose HTTPBin Service
+## Expose httpbin Service
 
-Expose `HTTPBin` using an `HTTPRoute` resource. The following example exposes the app on the `www.example.com` domain.
+Expose `httpbin` using an `HTTPRoute` resource. The following example exposes the app on the `www.example.com` domain.
 
 ```bash
 kubectl apply -f- <<EOF
@@ -159,7 +159,7 @@ To apply the ExtProc HTTP Filter to incoming traffic, run the following command:
 kubectl patch settings default -n gloo-system --type='merge' --patch "$(cat examples/extproc/extproc-gloo-settings.yaml)"
 ```
 
-## Send a Request to HTTPBin (Cloud Provider)
+## Send a Request to httpbin (Cloud Provider)
 
 If your Kubernetes cluster is hosted by a cloud provider (AWS, Azure, GCP), obtain the public address of the load balancer:
 
@@ -168,7 +168,7 @@ export INGRESS_GW_ADDRESS=$(kubectl get svc -n gloo-system gloo-proxy-http -o=js
 echo $INGRESS_GW_ADDRESS
 ```
 
-Send a request to `HTTPBin` service using the public address and verify that you get a `200` HTTP response. Note that it might take a few seconds for the load balancer to become fully ready.
+Send a request to `httpbin` service using the public address and verify that you get a `200` HTTP response. Note that it might take a few seconds for the load balancer to become fully ready.
 
 ```bash
 curl -I http://$INGRESS_GW_ADDRESS:8080/headers -H "host: www.example.com"
@@ -188,7 +188,7 @@ server: envoy
 transfer-encoding: chunked
 ```
 
-## Send a Request to HTTPBin (Locally Hosted Cluster)
+## Send a Request to httpbin (Locally Hosted Cluster)
 
 If the cluster is running locally or in an on-prem datacenter, expose the service on your local machine:
 
@@ -196,7 +196,7 @@ If the cluster is running locally or in an on-prem datacenter, expose the servic
 kubectl port-forward deployment/gloo-proxy-http -n gloo-system 8080:8080&
 ```
 
-Send a request to the locally exposed `HTTPBin` service, and verify that you get a `200` HTTP response code.
+Send a request to the locally exposed `httpbin` service, and verify that you get a `200` HTTP response code.
 
 ```bash
 curl -I localhost:8080/headers -H "host: www.example.com"
@@ -270,7 +270,7 @@ If results differ from the expected output, the following commands can help iden
   http   gloo-gateway   a3a6c06e2f4154185bf3f8af46abf22e-139567718.us-east-2.elb.amazonaws.com   True         93s
   ```
 
-- Verify the `HTTPBin` application is running:
+- Verify the `httpbin` application is running:
 
   ```sh
   kubectl -n httpbin get pods
@@ -283,7 +283,7 @@ If results differ from the expected output, the following commands can help iden
   httpbin-d57c95548-nz98t   3/3     Running   0          18s
   ```
 
-- Check the status of the `HTTPRoute` for `HTTPBin` service:
+- Check the status of the `HTTPRoute` for `httpbin` service:
 
   ```sh
   kubectl get -n httpbin httproute/httpbin -o yaml
