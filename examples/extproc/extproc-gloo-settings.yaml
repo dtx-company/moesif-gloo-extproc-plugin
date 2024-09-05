@@ -1,0 +1,13 @@
+spec:
+  extProc:
+    allowModeOverride: false
+    failureModeAllow: true
+    filterStage:
+      stage: "AuthZStage"
+    grpcService:
+      extProcServerRef:
+        name: "moesif-extproc-plugin"
+        namespace: "gloo-system"
+    processingMode:
+      requestHeaderMode: "SEND"
+      responseHeaderMode: "SEND"

@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moesif-extproc-plugin
+  namespace: gloo-system
+spec:
+  selector:
+    matchLabels:
+      app: moesif-extproc-plugin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: moesif-extproc-plugin
+    spec:
+      containers:
+        - name: moesif-extproc-plugin
+          image: gcr.io/solo-test-236622/moesif-extproc-plugin:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 50051
+          env:
+            - name: MOESIF_APPLICATION_ID
+              value: $MOESIF_APP_ID # <YOUR APPLICATION ID HERE>
+            - name: USER_ID_HEADER
+              value: "X-User-Example-Header"  
+            - name: COMPANY_ID_HEADER
+              value: "X-Company-Example-Header"  
+            - name: UPSTREAM
+              value: "outbound|443||api.moesif.net" 
+            - name: DEBUG
+              value: "false" 
+            - name: RUST_LOG
+              value: info
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: moesif-extproc-plugin
+  namespace: gloo-system
+  labels:
+    app: moesif-extproc-plugin
+  annotations:
+    gloo.solo.io/h2_service: "true"
+spec:
+  ports:
+  - port: 4445
+    targetPort: 50051
+    protocol: TCP
+  selector:
+    app: moesif-extproc-plugin
+---
+apiVersion: gloo.solo.io/v1
+kind: Upstream
+metadata:
+  labels:
+    app: moesif-extproc-plugin
+    discovered_by: kubernetesplugin
+  name: moesif-extproc-plugin
+  namespace: gloo-system
+spec:
+  discoveryMetadata: {}
+  useHttp2: true
+  kube:
+    selector:
+      app: moesif-extproc-plugin
+    serviceName: moesif-extproc-plugin
+    serviceNamespace: gloo-system
+    servicePort: 4445

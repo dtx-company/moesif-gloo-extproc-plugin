@@ -1,0 +1,12 @@
+[submodule "moesif-extproc/data-plane-api"]
+	path = moesif-extproc/data-plane-api
+	url = https://github.com/envoyproxy/data-plane-api.git
+[submodule "moesif-extproc/udpa"]
+	path = moesif-extproc/udpa
+	url = https://github.com/cncf/udpa.git
+[submodule "moesif-extproc/protoc-gen-validate"]
+	path = moesif-extproc/protoc-gen-validate
+	url = https://github.com/envoyproxy/protoc-gen-validate.git
+[submodule "moesif-extproc/xds"]
+	path = moesif-extproc/xds
+	url = https://github.com/cncf/xds.git
