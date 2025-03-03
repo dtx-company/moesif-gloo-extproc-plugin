@@ -70,7 +70,7 @@ pub async fn process_request_headers(
     event.request.transfer_encoding = event.request.headers.get("transfer-encoding").cloned();
     log::trace!("Transfer Encoding: {:?}", event.request.transfer_encoding);
 
-    add_env_headers_to_event(config, event).await;
+    add_user_and_company_id_headers_to_event(config, event).await;
 
     log_event(event);
 }
@@ -131,7 +131,7 @@ pub async fn send_grpc_response(
     }
 }
 
-pub async fn add_env_headers_to_event(config: &Arc<Config>, event: &mut Event) {
+pub async fn add_user_and_company_id_headers_to_event(config: &Arc<Config>, event: &mut Event) {
     // Log the pre-loaded values from EnvConfig
     log::trace!("Config USER_ID_HEADER: {:?}", config.env.user_id_header);
     log::trace!(
@@ -147,11 +147,13 @@ pub async fn add_env_headers_to_event(config: &Arc<Config>, event: &mut Event) {
     );
 
     if let Some(user_id_header) = &config.env.user_id_header {
-        event.user_id = Some(user_id_header.clone());
+        let lowered_user_id_header = user_id_header.to_lowercase();
+        event.user_id = event.request.headers.get(&lowered_user_id_header).cloned();
     }
 
     if let Some(company_id_header) = &config.env.company_id_header {
-        event.company_id = Some(company_id_header.clone());
+        let lowered_comp_id_header = company_id_header.to_lowercase();
+        event.company_id = event.request.headers.get(&lowered_comp_id_header).cloned();
     }
 }
 
@@ -315,5 +317,70 @@ fn set_level_based_on_debug(config: &Config) {
         log::set_max_level(LevelFilter::Trace);
     } else {
         log::set_max_level(LevelFilter::Warn);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{EnvConfig, Config};
+    use crate::event::Event;
+    use bytes::Bytes;
+    use envoy_ext_proc_proto::envoy::service::ext_proc::v3::HttpHeaders;
+    use envoy_ext_proc_proto::envoy::config::core::v3::{HeaderMap, HeaderValue};
+
+    #[tokio::test]
+    async fn test_process_request_headers() {
+        // arrange
+        // mock plugin header values and keys
+        let user_id_header_key = "X-Org-User-ID".to_string();
+        let user_id_header_value = "abc123".to_string();
+        let user_id_header_value_raw = Bytes::from(user_id_header_value.clone());
+        let company_id_header_key = "x-Org-Company-ID".to_string();
+        let company_id_header_value = "123cba".to_string();
+        let company_id_header_value_raw = Bytes::from(company_id_header_value.clone());
+
+        // create the headers object to contain user/company headers specified
+        // in the env vars
+        let headers = &HttpHeaders {
+            headers: Some(HeaderMap{
+                headers: vec![
+                    HeaderValue{
+                        key: user_id_header_key.clone(),
+                        value: user_id_header_value.clone(),
+                        raw_value: user_id_header_value_raw.clone(),
+                    },
+                    HeaderValue{
+                        key: company_id_header_key.clone(),
+                        value: company_id_header_value.clone(),
+                        raw_value: company_id_header_value_raw.clone(),
+                    },
+                ]
+            }),
+            ..Default::default()
+        };
+
+        // create our env config where custom identifying headers
+        // are specified
+        let env_config = EnvConfig{
+            user_id_header: Some(user_id_header_key.clone()),
+            company_id_header: Some(company_id_header_key.clone()),
+            ..Default::default()
+        };
+
+        // create our app config composed of our env config
+        let cfg = Arc::new(Config{
+            env: env_config,
+        });
+
+        // create a default event object
+        let mut event = Event::default();
+
+        // act
+        super::process_request_headers(&cfg, &mut event, headers).await;
+
+        // assert
+        assert_eq!(event.user_id, Some(user_id_header_value.clone()));
+        assert_eq!(event.company_id, Some(company_id_header_value.clone()))
     }
 }
